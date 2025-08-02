@@ -1,0 +1,7 @@
+datasets
+matplotlib
+numpy
+streamlit
+torch
+transformers
+huggingface_hub

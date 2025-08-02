@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Query Example with JavaScript</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+            background-color: #f4f7fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 100%; /* Ensure it spans the full width */
+            margin: 0;
+            text-align: center;
+        }
+
+        .query-box {
+            width: 40%;        /* Make the input box smaller */
+            padding: 8px;      /* Reduce padding */
+            margin: 20px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .submit-btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .submit-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Dropdown style */
+        #modelSelect {
+            padding: 8px 15px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* Result container styling */
+        .results-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            gap: 10px;
+            margin-top: 20px;
+            margin-left: 0; /* Align it to the left */
+            padding: 0;  /* Remove any internal padding */
+            width: 100%; /* Use full width */
+            text-align: left;
+        }
+
+        /* Result item box style */
+        .result-box {
+            background-color: #ffffff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: auto;
+            min-width: 150px;
+            max-width: 220px;
+            box-sizing: border-box;
+            font-size: 12px;
+            text-align: left;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .result-box h4 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #007BFF;
+        }
+
+        .result-box ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .result-box li {
+            background-color: #f8f9fa;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            display: inline-block;
+        }
+
+        /* Hover effect for list items */
+        .result-box li:hover {
+            background-color: #e7f1f5;
+        }
+
+        /* For small screens, stack the results vertically */
+        @media (max-width: 768px) {
+            .result-box {
+                width: 100%; /* Full width on smaller screens */
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Search Query</h1>
+
+    <!-- Form to accept search query -->
+    <input type="text" id="query" class="query-box" placeholder="Enter your search query">
+    <br>
+    
+    <!-- Dropdown to select model -->
+    <label for="modelSelect">Choose a model:</label>
+    <select id="modelSelect">
+        <option value="skipGram">SkipGram</option>
+        <option value="Glove">Glove</option>
+    </select>
+
+    <br><br>
+    <button class="submit-btn" onclick="searchQuery()">Search</button>
+
+    <!-- Displaying the result if a query is submitted -->
+    <div class="results-container" id="result"></div>
+</div>
+
+<script>
+function searchQuery() {
+    var query = document.getElementById('query').value;
+    var selectedModel = document.getElementById('modelSelect').value;  // Get the selected model from the dropdown
+
+    // Make sure the query is not empty
+    if (query.trim() === "") {
+        document.getElementById('result').innerHTML = "Please enter a search query.";
+        return;
+    }
+
+    // Perform the AJAX request to the Flask route
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/search", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    // Prepare the data to send (query and selected model)
+    var requestData = {
+        query: query,
+        model: selectedModel
+    };
+
+    // Send the request data as JSON
+    xhr.send(JSON.stringify(requestData));
+
+    // Handle the response after the request is completed
+    xhr.onload = function() {
+        if (xhr.status == 200) {
+            var response = JSON.parse(xhr.responseText);
+
+            // Log the entire response for debugging
+            console.log(response);
+
+            // Check if 'result' is present in the response
+            if (response.result) {
+                var resultsHtml = "";
+
+                // Loop through the top-level keys in the response.result (e.g., 'food', 'tri')
+                for (const [category, items] of Object.entries(response.result)) {
+                    resultsHtml += `<div class="result-box">
+                        <h4>${category}:</h4>
+                        <ul>`;
+
+                    // Loop through each sub-key (e.g., 'abc', 'xyz') within each category
+                    for (const [key, value] of Object.entries(items)) {
+                        resultsHtml += `<li><strong>${key}:</strong> ${JSON.stringify(value)}</li>`;  // Display values as a string
+                    }
+
+                    resultsHtml += "</ul></div>";
+                }
+
+                // Set the HTML content with the formatted results
+                document.getElementById('result').innerHTML = resultsHtml;
+            } else {
+                document.getElementById('result').innerHTML = "No results found.";
+            }
+        } else {
+            document.getElementById('result').innerHTML = "Error with the search request!";
+        }
+    };
+
+    // Handle network errors
+    xhr.onerror = function() {
+        document.getElementById('result').innerHTML = "Network error!";
+    };
+}
+</script>
+
+</body>
+</html>
